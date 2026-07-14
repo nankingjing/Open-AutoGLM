@@ -75,3 +75,21 @@ class TestHandleWait:
             result = handler.execute(_wait_action(duration="-5 seconds"), 1080, 1920)
         assert result.success is True
         sleep.assert_called_once_with(1.0)
+
+    def test_non_finite_duration_falls_back(self):
+        """NaN and infinite durations must fall back to the default."""
+        handler = ActionHandler()
+        for raw in ("nan", "inf", "NaN", "+Infinity"):
+            with patch("phone_agent.actions.handler.time.sleep") as sleep:
+                result = handler.execute(_wait_action(duration=raw), 1080, 1920)
+            assert result.success is True, f"duration={raw!r} should not fail"
+            sleep.assert_called_once_with(1.0)
+            sleep.reset_mock()
+
+    def test_zero_duration_is_allowed(self):
+        """Zero is a legitimate finite duration and should not be clamped."""
+        handler = ActionHandler()
+        with patch("phone_agent.actions.handler.time.sleep") as sleep:
+            result = handler.execute(_wait_action(duration="0 seconds"), 1080, 1920)
+        assert result.success is True
+        sleep.assert_called_once_with(0.0)

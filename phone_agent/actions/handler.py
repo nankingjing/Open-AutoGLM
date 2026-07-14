@@ -1,6 +1,7 @@
 """Action handler for processing AI model outputs."""
 
 import ast
+import math
 import re
 import subprocess
 import time
@@ -237,8 +238,10 @@ class ActionHandler:
         except (ValueError, TypeError):
             duration = 1.0
 
-        # ``time.sleep`` raises ``ValueError`` for negative values, so clamp.
-        if duration < 0:
+        # ``time.sleep`` accepts ``float('nan')`` and ``float('inf')`` as valid
+        # arguments, but neither is useful here: NaN produces no wait and inf
+        # would hang the agent. Clamp non-finite values to the default.
+        if duration < 0 or not math.isfinite(duration):
             duration = 1.0
 
         time.sleep(duration)
